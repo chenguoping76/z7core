@@ -40,7 +40,7 @@
 &axi_intc_0 { 
     xlnx,kind-of-intr = <0x0>;
     xlnx,num-intr-inputs = <0x20>;
-    interrupt-parent = <&gic>;
+    /* interrupt-parent = <&gic>; */
     interrupts = <0 0x59 4>;
 };
 
