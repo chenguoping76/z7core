@@ -1,0 +1,138 @@
+/include/ "system-conf.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/media/xilinx-vip.h>
+
+/ {
+	model = "Zynq BKB220 Development Board";
+	compatible = "bkb,b220", "xlnx,zynq-7000";
+
+	chosen {
+		bootargs = "console=ttyPS0,115200 earlyprintk root=/dev/mmcblk0p2 rw rootwait cma=256M";
+	};
+
+	usb_phy0: usb_phy@0 {
+		compatible = "ulpi-phy";
+		#phy-cells = <0>;
+		reg = <0xe0002000 0x1000>;
+		view-port = <0x0170>;
+		drv-vbus;
+	};
+};
+
+
+&amba {
+    zyxclmm_drm {
+        compatible = "xlnx,zocl";
+        status = "okay";
+        interrupt-parent = <&axi_intc_0>;
+        interrupts = <0  4>, <1  4>, <2  4>, <3  4>,
+                     <4  4>, <5  4>, <6  4>, <7  4>,
+                     <8  4>, <9  4>, <10 4>, <11 4>,
+                     <12 4>, <13 4>, <14 4>, <15 4>,
+                     <16 4>, <17 4>, <18 4>, <19 4>,
+                     <20 4>, <21 4>, <22 4>, <23 4>,
+                     <24 4>, <25 4>, <26 4>, <27 4>,
+                     <28 4>, <29 4>, <30 4>, <31 4>;
+    };  
+};
+
+
+&axi_intc_0 { 
+    xlnx,kind-of-intr = <0x0>;
+    xlnx,num-intr-inputs = <0x20>;
+    interrupt-parent = <&gic>;
+    interrupts = <0 0x59 4>;
+};
+
+
+
+&gem0 {
+        phy-handle = <&ethernet_phy>;
+        ethernet_phy: ethernet-phy@0 {
+                device_type = "ethernet-phy";
+                reg = <0>;
+                /* dt-bindings/phy/realtek.h */
+                /* #define REALTEK_LED_LINK10              BIT(0)
+                   #define REALTEK_LED_LINK100             BIT(1)
+                   #define REALTEK_LED_LINK1000            BIT(3)
+                   #define REALTEK_LED_ACT                 BIT(4)
+                   #define REALTEK_LED_DEFAULT             BIT(7)
+                */
+                /* LED0=10+A, LED1=100+A, LED2=1000+A */
+                realtek,leds-config = <0x11 0x12 0x18>;
+        };
+};
+
+&usb0 {	
+	dr_mode = "host";
+	usb-phy = <&usb_phy0>;
+};
+
+
+&amba_pl {
+	digilent_hdmi {
+		compatible = "digilent,hdmi";
+
+		clocks = <&axi_dynclk_0>;
+		clock-names = "clk";
+
+		digilent,edid-i2c = <&i2c0>;
+		digilent,fmax = <150000>;
+
+		port@0 {
+			hdmi_ep: endpoint {
+				remote-endpoint = <&pl_disp_ep>;
+			};
+		};
+	};
+
+	zyxclmm_drm {
+        compatible="ichiri_disabled,jcl";
+        status="disabled";
+    		};
+
+	xlnx_pl_disp {
+		compatible = "xlnx,pl-disp";
+
+		dmas = <&axi_vdma_1 0>;
+		dma-names = "dma0";
+
+		/*
+		 * See Documentation/devicetree/bindings/dma/xilinx/xilinx_frmbuf.txt
+		 * to find the equivalent DRM fourcc code for the format selected in
+		 * the Frame Buffer Reader, then see See include/uapi/drm/drm_fourcc.h
+		 * to find the corresponding 4-char string that should be placed here.
+		 */
+		xlnx,vformat = "XR24";
+		xlnx,bridge = <&v_tc_out>;
+
+		port@0 {
+			pl_disp_ep: endpoint {
+				remote-endpoint = <&hdmi_ep>;
+			};
+		};
+	};
+};
+
+&v_tc_out {
+	compatible = "xlnx,bridge-v-tc-6.1";
+	xlnx,pixels-per-clock = <1>;
+};
+
+&axi_dynclk_0 {
+	compatible = "dglnt,axi-dynclk";
+	#clock-cells = <0>;
+	clocks = <&clkc 15>;
+};
+
+&axi_vdma_1 {
+	dma-ranges = <0x00000000 0x00000000 0x40000000>;
+};
+
+
+&i2c0 {
+	clock-frequency = <100000>;
+	status = "okay";
+};
+
+
